@@ -526,6 +526,7 @@ public class AiliaSpeechModel : IDisposable
 
             int samples = 0;
             float[] samples_buf = null;
+            bool samples_complete = false;
 
             lock (m_lock_async)
             {
@@ -545,6 +546,7 @@ public class AiliaSpeechModel : IDisposable
                         p = p + waveData.Length;
                     }
                 }
+                samples_complete = threadComplete;
                 threadWaveQueue = new List<float[]>();
             }
 
@@ -605,7 +607,7 @@ public class AiliaSpeechModel : IDisposable
             uint complete = 0;
             status = AiliaSpeech.ailiaSpeechComplete(net, ref complete);
             Check(status, "ailiaSpeechComplete");
-            if (threadComplete){
+            if (samples_complete){
                 if (complete == 0){
                     Check(-1, "ailiaSpeechComplete must be true");
                 }
@@ -614,7 +616,7 @@ public class AiliaSpeechModel : IDisposable
             lock (m_lock_async)
             {
                 m_processing = false;
-                if (threadComplete){
+                if (samples_complete){
                     m_complete = true;
                 }
             }
