@@ -70,6 +70,61 @@ public class AiliaSpeechTranslateModel : IDisposable
     }
 
     /****************************************************************
+     * 実行環境の取得
+     */
+
+    private string env_name = "";
+
+    /**
+    * \~japanese
+    * @brief 実行環境を取得します。
+    * @param is_gpu   GPUを使用するかどうか
+    * @return
+    *   env_id
+    *   
+    * \~english
+    * @brief Get the environmen id
+    * @param is_gpu   Whether to use GPU
+    * @return
+    *   env_id
+    */
+    public int GetEnvironmentId(bool is_gpu){
+        int env_id = Ailia.AILIA_ENVIRONMENT_ID_AUTO;
+        if (is_gpu) { // GPU
+            int count = 0;
+            Ailia.ailiaGetEnvironmentCount(ref count);
+            for (int i = 0; i < count; i++){
+                IntPtr env_ptr = IntPtr.Zero;
+                Ailia.ailiaGetEnvironment(ref env_ptr, (uint)i, Ailia.AILIA_ENVIRONMENT_VERSION);
+                Ailia.AILIAEnvironment env = (Ailia.AILIAEnvironment)Marshal.PtrToStructure(env_ptr, typeof(Ailia.AILIAEnvironment));
+
+                if (env.backend == Ailia.AILIA_ENVIRONMENT_BACKEND_MPS || env.backend == Ailia.AILIA_ENVIRONMENT_BACKEND_CUDA || env.backend == Ailia.AILIA_ENVIRONMENT_BACKEND_VULKAN){
+                    env_id = env.id;
+                    env_name = Marshal.PtrToStringAnsi(env.name);
+                }
+            }
+        } else {
+            env_name = "cpu";
+        }
+        return env_id;
+    }
+
+    /**
+    * \~japanese
+    * @brief 実行環境の名称を取得します。
+    * @return
+    *   env_name
+    *   
+    * \~english
+    * @brief Get the environmen name
+    * @return
+    *   env_name
+    */
+    public string GetEnvironmentName(){
+        return env_name;
+    }
+
+    /****************************************************************
      * モデル
      */
 
