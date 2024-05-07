@@ -104,7 +104,6 @@ public class AiliaSpeechModel : IDisposable
     * @param task           Task (AiliaSpeech.AILIA_SPEECH_TASK_*)
     * @param flag           OR of flags (AiliaSpeech.AILIA_SPEECH_FLAG_*)
     * @param language       Language (ja or en or etc. auto is automatic selection)
-    * @param virtual_memory By using virtual memory, the amount of memory consumption is reduced.
     * @return
     *   If this function is successful, it returns  true  , or  false  otherwise.
     */
@@ -251,11 +250,16 @@ public class AiliaSpeechModel : IDisposable
         if (net == null){
             return false;
         }
-        byte[] text = System.Text.Encoding.UTF8.GetBytes(prefix+"\u0000");
-        GCHandle handle = GCHandle.Alloc(text, GCHandleType.Pinned);
-        IntPtr prefix_ptr = handle.AddrOfPinnedObject();
-        int status = AiliaSpeech.ailiaSpeechOpenPostProcessFile(net, encoder_path, decoder_path, source_path, target_path, prefix_ptr, type);
-        handle.Free();
+        int status;
+        if (prefix == null){
+            status = AiliaSpeech.ailiaSpeechOpenPostProcessFile(net, encoder_path, decoder_path, source_path, target_path, IntPtr.Zero, type);
+        }else{
+            byte[] text = System.Text.Encoding.UTF8.GetBytes(prefix+"\u0000");
+            GCHandle handle = GCHandle.Alloc(text, GCHandleType.Pinned);
+            IntPtr prefix_ptr = handle.AddrOfPinnedObject();
+            status = AiliaSpeech.ailiaSpeechOpenPostProcessFile(net, encoder_path, decoder_path, source_path, target_path, prefix_ptr, type);
+            handle.Free();
+        }
         Check(status, "ailiaSpeechOpenPostProcessFile");
         if (status != 0){
             return false;
@@ -389,14 +393,14 @@ public class AiliaSpeechModel : IDisposable
         uint count = 0;
         int status = AiliaSpeech.ailiaSpeechGetTextCount(net, ref count);
         if(status!=0){
-            Debug.Log(""+status);
+            Check(status, "ailiaSpeechGetTextCount");
         }
 
         for (uint idx = 0; idx < count; idx++){
             AiliaSpeech.AILIASpeechText text = new AiliaSpeech.AILIASpeechText();
             status = AiliaSpeech.ailiaSpeechGetText(net, text, AiliaSpeech.AILIA_SPEECH_TEXT_VERSION, idx);
             if(status!=0){
-                Debug.Log(""+status);
+                Check(status, "ailiaSpeechGetText");
             }
 
             float cur_time = text.time_stamp_begin;
@@ -521,25 +525,32 @@ public class AiliaSpeechModel : IDisposable
             int status;
 
             int samples = 0;
-            for (int i = 0; i < threadWaveQueue.Count; i++){
-                float[] waveData = threadWaveQueue[i];
-                samples += waveData.Length;
-            }
+            float[] samples_buf = null;
 
-            if (samples > 0){
-                float[] samples_buf = new float[samples];
-                int p = 0;
+            lock (m_lock_async)
+            {
                 for (int i = 0; i < threadWaveQueue.Count; i++){
                     float[] waveData = threadWaveQueue[i];
-                    for (int j = 0; j < waveData.Length; j++){
-                        samples_buf[p + j] = waveData[j];
-                    }
-                    p = p + waveData.Length;
+                    samples += waveData.Length;
                 }
+                if (samples > 0){
+                    samples_buf = new float[samples];
 
+                    int p = 0;
+                    for (int i = 0; i < threadWaveQueue.Count; i++){
+                        float[] waveData = threadWaveQueue[i];
+                        for (int j = 0; j < waveData.Length; j++){
+                            samples_buf[p + j] = waveData[j];
+                        }
+                        p = p + waveData.Length;
+                    }
+                }
+                threadWaveQueue = new List<float[]>();
+            }
+
+            if (samples > 0) {
                 status = AiliaSpeech.ailiaSpeechPushInputData(net, samples_buf, threadChannels, (uint)samples_buf.Length / threadChannels, threadFrequency);
                 Check(status, "ailiaSpeechPushInputData");
-                threadWaveQueue = new List<float[]>();
             }
 
             if (threadComplete){
@@ -629,7 +640,6 @@ public class AiliaSpeechModel : IDisposable
     *   実行が完了するとIsTranscribed APIがTrueを返します。
     *   実行結果はGetResults APIで取得可能です。
     *   実行の途中結果はGetIntermediateText APIで取得可能です。
-    *   IsProcessing APIがtrueの場合はエラーになります。
     *   
     * \~english
     * @brief   Perform speech recognition
@@ -645,18 +655,17 @@ public class AiliaSpeechModel : IDisposable
     *   When the execution is completed, the IsTranscribed API returns True.
     *   Execution results can be obtained with the GetResults API.
     *   The result of execution can be obtained with the GetIntermediateText API.
-    *   It is an error if the IsProcessing API is true.
     */
-    public bool Transcribe(List<float[]> waveQueue, uint frequency, uint channels, bool tail)
+    public bool Transcribe(float[] waveData, uint frequency, uint channels, bool tail)
     {
-        if (IsProcessing()){
+        if (waveData.Length == 0){
             return false;
         }
         lock (m_lock_async)
         {
             threadChannels = channels;
             threadFrequency = frequency;
-            threadWaveQueue = new List<float[]>(waveQueue);
+            threadWaveQueue.Add(waveData);
             threadComplete = tail;
             m_processing = true;
             m_auto_event.Set();
@@ -778,4 +787,5 @@ public class AiliaSpeechModel : IDisposable
         return false;
     }
 }
+
 } // namespace ailiaSpeech
