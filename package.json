@@ -7,9 +7,5 @@
     "name": "ax Inc.",
     "email": "contact@axinc.jp",
     "url": "https://axinc.jp/"
-  },
-  "dependencies": {
-    "ai.ailia.ailia": "1.4.0",
-    "ai.ailia.ailia_teokenizer": "1.2.0"
   }
 }
