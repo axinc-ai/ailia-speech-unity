@@ -1,5 +1,5 @@
 /* ailia Speech Unity Plugin Native Interface */
-/* Copyright 2022 - 2023 AXELL CORPORATION */
+/* Copyright 2022 - 2025 AXELL CORPORATION */
 
 using UnityEngine;
 using System.Collections;
@@ -606,7 +606,7 @@ public class AiliaSpeech
 		public IntPtr text;
 		public float time_stamp_begin;
 		public float time_stamp_end;
-		public uint person_id;	// TBD
+		public uint person_id;
 		public IntPtr language;
 		public float confidence;
 	};
@@ -731,7 +731,7 @@ public class AiliaSpeech
 
 	/**
 	* \~japanese
-	* @brief 後処理知に適用するAIモデルを指定します。
+	* @brief 後処理に適用するAIモデルを指定します。
 	* @param net ネットワークオブジェクトポインタ
 	* @param encoder_path onnxファイルのパス名
 	* @param decoder_path onnxファイルのパス名
@@ -774,6 +774,31 @@ public class AiliaSpeech
 #else
 	[DllImport(LIBRARY_NAME, EntryPoint = "ailiaSpeechOpenPostProcessFileA", CharSet=CharSet.Ansi)]
 	public static extern int ailiaSpeechOpenPostProcessFile(IntPtr net, string encoder_path, string decoder_path, string source_path, string target_path, IntPtr prefix, int post_process_type);
+#endif
+
+	/**
+	* \~japanese
+	* @brief 話者分離に適用するAIモデルを指定します。
+	* @param net ネットワークオブジェクトポインタ
+	* @param segmentation_path onnxファイルのパス名
+	* @param embedding_path onnxファイルのパス名
+	* @return
+	*   成功した場合は \ref AILIA_STATUS_SUCCESS 、そうでなければエラーコードを返す。
+	*
+	* \~english
+	* @brief Set AI model for speaker diarization 
+	* @param net A network instance pointer
+	* @param segmentation_path The path name to the onnx file
+	* @param embedding_path The path name to the onnx file
+	* @return
+	*   If this function is successful, it returns  \ref AILIA_STATUS_SUCCESS , or an error code otherwise.
+	*/
+#if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)
+	[DllImport(LIBRARY_NAME, EntryPoint = "ailiaSpeechOpenDiarizationFileW", CharSet=CharSet.Unicode)]
+	public static extern int ailiaSpeechOpenDiarizationFile(IntPtr net, string segmentation_path, string embedding_path);
+#else
+	[DllImport(LIBRARY_NAME, EntryPoint = "ailiaSpeechOpenDiarizationFileA", CharSet=CharSet.Ansi)]
+	public static extern int ailiaSpeechOpenDiarizationFile(IntPtr net, string segmentation_path, string embedding_path);
 #endif
 
 	/**

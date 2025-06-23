@@ -1,5 +1,5 @@
 /* ailia.speech model class */
-/* Copyright 2022-2024 AXELL CORPORATION */
+/* Copyright 2022-2025 AXELL CORPORATION */
 
 using System.Collections;
 using System.Collections.Generic;
@@ -11,6 +11,15 @@ using System.Runtime.InteropServices;
 using ailia;
 
 namespace ailiaSpeech{
+
+public class AiliaSpeechText{
+    public string text;
+    public float time_stamp_begin;
+    public float time_stamp_end;
+    public uint person_id;
+    public string language;
+    public float confidence;
+};
 
 public class AiliaSpeechModel : IDisposable
 {
@@ -323,9 +332,39 @@ public class AiliaSpeechModel : IDisposable
         return true;
     }
 
+    /**
+    * \~japanese
+    * @brief ポストプロセスファイルを開きます。
+	* @param segmentation_path onnxファイルのパス名
+	* @param embedding_path onnxファイルのパス名
+    * @param type AILIA_SPEECH_DIARIZATION_TYPE_*
+    * @return
+    *   成功した場合はtrue、失敗した場合はfalseを返す。
+    *   
+    * \~english
+    * @brief Open PostProcess file.
+	* @param segmentation_path The path name to the onnx file
+	* @param embedding_path The path name to the onnx file
+    * @param type AILIA_SPEECH_DIARIZATION_TYPE_*
+    * @return
+    *   If this function is successful, it returns  true  , or  false  otherwise.
+    */
+    public bool OpenDiarization(string segmentation_path, string embedding_path, int type){
+        if (net == null){
+            return false;
+        }
+        int status;
+        status = AiliaSpeech.ailiaSpeechOpenDiarizationFile(net, segmentation_path, embedding_path);//, type);
+        Check(status, "ailiaSpeechOpenDializationFile");
+        if (status != 0){
+            return false;
+        }
+        return true;
+    }
+
     /****************************************************************
-     * 開放する
-     */
+        * 開放する
+        */
     /**
     * \~japanese
     * @brief インスタンスを破棄します。
@@ -341,7 +380,8 @@ public class AiliaSpeechModel : IDisposable
     {
         DestroyThread();
         DestroyInterrupt();
-        if (net != IntPtr.Zero){
+        if (net != IntPtr.Zero)
+        {
             AiliaSpeech.ailiaSpeechDestroy(net);
             net = IntPtr.Zero;
         }
@@ -463,9 +503,19 @@ public class AiliaSpeechModel : IDisposable
             float confidence = text.confidence;
 
             string header = GetDate(cur_time, next_time, confidence);
+            string speaker = "Speaker." + text.person_id;
 
-            string display_text = "[" + header + "] " + Marshal.PtrToStringAnsi(text.text);
+            string display_text = "[" + header + "] " + "[" + speaker + "] " + Marshal.PtrToStringAnsi(text.text);
             m_results.Add(display_text);
+
+            AiliaSpeechText display_struct = new AiliaSpeechText();
+            display_struct.text = Marshal.PtrToStringAnsi(text.text);
+            display_struct.time_stamp_begin = text.time_stamp_begin;
+            display_struct.time_stamp_end = text.time_stamp_end;
+            display_struct.person_id = text.person_id;
+            display_struct.language = Marshal.PtrToStringAnsi(text.text);
+            display_struct.confidence = text.confidence;
+            m_results_struct.Add(display_struct);
         }
     }
 
@@ -484,6 +534,7 @@ public class AiliaSpeechModel : IDisposable
     private bool m_decoding = false;
     private bool m_complete = false;
     private List<string> m_results = new List<string>();
+    private List<AiliaSpeechText> m_results_struct = new List<AiliaSpeechText>();
 
     private List<float[]> threadWaveQueue = new List<float[]>();
     private uint threadChannels = 0;
@@ -536,6 +587,7 @@ public class AiliaSpeechModel : IDisposable
         m_complete = false;
         m_intermediate_text = "";
         m_results = new List<string>();
+        m_results_struct = new List<AiliaSpeechText>();
 
         // create thread
         m_auto_event = new AutoResetEvent(false);
@@ -803,6 +855,27 @@ public class AiliaSpeechModel : IDisposable
             return results;
         }
     }
+
+    /**
+    * \~japanese
+    * @brief Speech2Textの実行結果を構造体で取得してクリアします。
+    * @return
+    *   認識結果を返す。
+    *   
+    * \~english
+    * @brief Get structured results and clear of Speech2Text.
+    * @return
+    *   Transcribe results.
+    */
+    public List<AiliaSpeechText> GetStructuredResults()
+        {
+            lock (m_lock_async)
+            {
+                List<AiliaSpeechText> results_struct = new List<AiliaSpeechText>(m_results_struct);
+                m_results_struct.Clear();
+                return results_struct;
+            }
+        }
 
     /**
     * \~japanese
