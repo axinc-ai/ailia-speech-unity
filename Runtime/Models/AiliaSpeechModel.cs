@@ -334,18 +334,18 @@ public class AiliaSpeechModel : IDisposable
 
     /**
     * \~japanese
-    * @brief ポストプロセスファイルを開きます。
-	* @param segmentation_path onnxファイルのパス名
-	* @param embedding_path onnxファイルのパス名
-    * @param type AILIA_SPEECH_DIARIZATION_TYPE_*
+    * @brief 話者分離に適用するAIモデルを開きます。
+    * @param segmentation_path onnxファイルのパス名
+    * @param embedding_path onnxファイルのパス名
+    * @param type AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO
     * @return
     *   成功した場合はtrue、失敗した場合はfalseを返す。
     *   
     * \~english
-    * @brief Open PostProcess file.
-	* @param segmentation_path The path name to the onnx file
-	* @param embedding_path The path name to the onnx file
-    * @param type AILIA_SPEECH_DIARIZATION_TYPE_*
+    * @brief Open AI model for speaker diarization
+    * @param segmentation_path The path name to the onnx file
+    * @param embedding_path The path name to the onnx file
+    * @param type AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO
     * @return
     *   If this function is successful, it returns  true  , or  false  otherwise.
     */
@@ -354,7 +354,7 @@ public class AiliaSpeechModel : IDisposable
             return false;
         }
         int status;
-        status = AiliaSpeech.ailiaSpeechOpenDiarizationFile(net, segmentation_path, embedding_path);//, type);
+        status = AiliaSpeech.ailiaSpeechOpenDiarizationFile(net, segmentation_path, embedding_path, type);
         Check(status, "ailiaSpeechOpenDializationFile");
         if (status != 0){
             return false;
@@ -504,6 +504,10 @@ public class AiliaSpeechModel : IDisposable
 
             string header = GetDate(cur_time, next_time, confidence);
             string speaker = "Speaker." + text.person_id;
+            if (text.person_id == AiliaSpeech.AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN)
+            {
+                speaker = "Speaker.UNK";
+            }
 
             string display_text = "[" + header + "] " + "[" + speaker + "] " + Marshal.PtrToStringAnsi(text.text);
             m_results.Add(display_text);

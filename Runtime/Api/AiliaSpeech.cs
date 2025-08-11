@@ -190,19 +190,34 @@ public class AiliaSpeech
 	public const Int32 AILIA_SPEECH_VAD_TYPE_SILERO = (0);
 
 	/****************************************************************
-	* 辞書定義
+	* DIARIZATION定義
 	**/
 
 	/**
 	* \~japanese
-	* @def AILIA_SPEECH_DICTIONARY_TYPE_REPLACE
-	* @brief 置換辞書
+	* @def AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO
+	* @brief PyannoteAudio
 	*
 	* \~english
-	* @def AILIA_SPEECH_DICTIONARY_TYPE_REPLACE
-	* @brief Dictionary for replace
+	* @def AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO
+	* @brief PyannoteAudio
 	*/
-	public const Int32 AILIA_SPEECH_DICTIONARY_TYPE_REPLACE = (0);
+	public const Int32 AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO = (0);
+
+	/****************************************************************
+		* 辞書定義
+		**/
+
+		/**
+		* \~japanese
+		* @def AILIA_SPEECH_DICTIONARY_TYPE_REPLACE
+		* @brief 置換辞書
+		*
+		* \~english
+		* @def AILIA_SPEECH_DICTIONARY_TYPE_REPLACE
+		* @brief Dictionary for replace
+		*/
+		public const Int32 AILIA_SPEECH_DICTIONARY_TYPE_REPLACE = (0);
 
 	/****************************************************************
 	* 後処理定義
@@ -241,12 +256,23 @@ public class AiliaSpeech
 	*/
 	public const Int32 AILIA_SPEECH_POST_PROCESS_TYPE_FUGUMT_JA_EN = (2);
 
+	/**
+	* \~japanese
+	* @def AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN
+	* @brief person_id が無効であることを示す値 (話者分離無効時などに設定される)
+	*
+	* \~english
+	* @def AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN
+	* @brief indicate that person_id is invalid (set when speaker separation is disabled, etc.)
+	*/
+	public const UInt32 AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN = (0xFFFFFFFF);
+
 	/****************************************************************
 	* APIコールバック定義
 	**/
 
-	// API mapping via C#
-	public delegate int ailiaCallbackAudioGetFrameLen(ref Int32 a, int b, int c, int d, int e);
+		// API mapping via C#
+		public delegate int ailiaCallbackAudioGetFrameLen(ref Int32 a, int b, int c, int d, int e);
 	public delegate int ailiaCallbackAudioGetMelSpectrogram(IntPtr a, IntPtr b, int c, int d, int e, int f, int g, int h, int i, int j, float k, int l, float m, float n, int o, int p, int q);
 	public delegate int ailiaCallbackAudioResample(IntPtr a, IntPtr b, int c, int d, int e, int f);
 	public delegate int ailiaCallbackAudioGetResampleLen(IntPtr a, int b, int c, int d);
@@ -782,6 +808,7 @@ public class AiliaSpeech
 	* @param net ネットワークオブジェクトポインタ
 	* @param segmentation_path onnxファイルのパス名
 	* @param embedding_path onnxファイルのパス名
+	* @param type AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO
 	* @return
 	*   成功した場合は \ref AILIA_STATUS_SUCCESS 、そうでなければエラーコードを返す。
 	*
@@ -790,15 +817,16 @@ public class AiliaSpeech
 	* @param net A network instance pointer
 	* @param segmentation_path The path name to the onnx file
 	* @param embedding_path The path name to the onnx file
+	* @param type AILIA_SPEECH_DIARIZATION_TYPE_PYANNOTE_AUDIO
 	* @return
 	*   If this function is successful, it returns  \ref AILIA_STATUS_SUCCESS , or an error code otherwise.
 	*/
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN)
 	[DllImport(LIBRARY_NAME, EntryPoint = "ailiaSpeechOpenDiarizationFileW", CharSet=CharSet.Unicode)]
-	public static extern int ailiaSpeechOpenDiarizationFile(IntPtr net, string segmentation_path, string embedding_path);
+	public static extern int ailiaSpeechOpenDiarizationFile(IntPtr net, string segmentation_path, string embedding_path, int type);
 #else
 	[DllImport(LIBRARY_NAME, EntryPoint = "ailiaSpeechOpenDiarizationFileA", CharSet=CharSet.Ansi)]
-	public static extern int ailiaSpeechOpenDiarizationFile(IntPtr net, string segmentation_path, string embedding_path);
+	public static extern int ailiaSpeechOpenDiarizationFile(IntPtr net, string segmentation_path, string embedding_path, int type);
 #endif
 
 	/**
