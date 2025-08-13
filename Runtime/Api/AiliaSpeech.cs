@@ -258,14 +258,14 @@ public class AiliaSpeech
 
 	/**
 	* \~japanese
-	* @def AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN
-	* @brief person_id が無効であることを示す値 (話者分離無効時などに設定される)
+	* @def AILIA_SPEECH_SPEAKER_ID_UNKNOWN
+	* @brief speaker_id が無効であることを示す値 (話者分離無効時などに設定される)
 	*
 	* \~english
-	* @def AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN
-	* @brief indicate that person_id is invalid (set when speaker separation is disabled, etc.)
+	* @def AILIA_SPEECH_SPEAKER_ID_UNKNOWN
+	* @brief indicate that speaker_id is invalid (set when speaker separation is disabled, etc.)
 	*/
-	public const UInt32 AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN = (0xFFFFFFFF);
+	public const UInt32 AILIA_SPEECH_SPEAKER_ID_UNKNOWN = (0xFFFFFFFF);
 
 	/****************************************************************
 	* APIコールバック定義
@@ -632,7 +632,7 @@ public class AiliaSpeech
 		public IntPtr text;
 		public float time_stamp_begin;
 		public float time_stamp_end;
-		public uint person_id;
+		public uint speaker_id;
 		public IntPtr language;
 		public float confidence;
 	};

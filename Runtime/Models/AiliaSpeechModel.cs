@@ -16,7 +16,7 @@ public class AiliaSpeechText{
     public string text;
     public float time_stamp_begin;
     public float time_stamp_end;
-    public uint person_id;
+    public uint speaker_id;
     public string language;
     public float confidence;
 };
@@ -503,8 +503,8 @@ public class AiliaSpeechModel : IDisposable
             float confidence = text.confidence;
 
             string header = GetDate(cur_time, next_time, confidence);
-            string speaker = "Speaker." + text.person_id;
-            if (text.person_id == AiliaSpeech.AILIA_SPEECH_TEXT_PERSON_ID_UNKNOWN)
+            string speaker = "Speaker." + text.speaker_id;
+            if (text.speaker_id == AiliaSpeech.AILIA_SPEECH_SPEAKER_ID_UNKNOWN)
             {
                 speaker = "Speaker.UNK";
             }
@@ -516,7 +516,7 @@ public class AiliaSpeechModel : IDisposable
             display_struct.text = Marshal.PtrToStringAnsi(text.text);
             display_struct.time_stamp_begin = text.time_stamp_begin;
             display_struct.time_stamp_end = text.time_stamp_end;
-            display_struct.person_id = text.person_id;
+            display_struct.speaker_id = text.speaker_id;
             display_struct.language = Marshal.PtrToStringAnsi(text.text);
             display_struct.confidence = text.confidence;
             m_results_struct.Add(display_struct);
