@@ -269,7 +269,7 @@ public class AiliaSpeechTranslateModel : IDisposable
         text.time_stamp_begin = 0.0f;
         text.time_stamp_end = 0.0f;
         text.confidence = 0.0f;
-        text.person_id = 0;
+        text.speaker_id = 0;
         text.language = language_text_ptr;
 
         uint idx = 0;
